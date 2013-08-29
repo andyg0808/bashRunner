@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# startupscript
+# This script is started automatically on user login via /etc/xdg/autostart/script.desktop
+
+APP_PATH="/apps/startupscript/"
+DEBUG=false
+
+function write_key () {
+	# Arguments:
+	# $1: name of task
+	# $2: what to write
+	if $DEBUG
+	then
+		echo "Writing $APP_PATH$1 as $2" >&2
+	fi
+	dconf write "$APP_PATH$1" "$2"
+}
+
+function read_key () {
+	# Arguments:
+	# $1: name of task
+	local r="$(dconf read "$APP_PATH$1")"
+	if $DEBUG
+	then
+		echo "Read $APP_PATH$1 as $r" >&2
+	fi
+	echo "$r"
+}
+
+function reset_key () {
+	# Arguments:
+	# $1: name of task
+	if $DEBUG
+	then
+		echo "Resetting $APP_PATH$1" >&2
+	fi
+	dconf reset "$APP_PATH$1"
+}
+
+function task () {
+	# Arguments:
+	# $1: name of task
+	# $2: task to run
+	# $3: run multiple
+	if [ -z "$1" ]
+	then
+		exit 14
+	fi
+
+	if [ "$3" == "repeat" ]
+	then
+		local count="$(read_key "$1")"
+		let count++
+		echo -n "Doing $1..."
+
+		# Substitute the run count for %c in the command
+		local cmd="${2//'%c'/$count}"
+		# Substitute % for %% in the command
+		local cmd="${cmd//'%%'/'%'}"
+
+		# If the task completes successfully, add a count
+		eval "$cmd" && write_key "$1" "$count"
+		echo -e "\t        DONE (historical total: $count)"
+	elif [ "$3" == "clear" ]
+	then
+		reset_key "$1"
+	else
+		local status="$(read_key "$1")"
+
+		# If the task hasn't been run before...
+		if [ "$status" != "'done'" ]
+		then
+			echo -n "Doing $1 for the only time..."
+			eval "$2" && write_key "$1" "'done'"
+		else
+			echo "Not doing "$1" as it's been done already."
+		fi
+	fi
+}
+
+function demo () {
+	zenity --question --text="Press yes to complete this task. Press no to fail to complete this task."
+}
+
+task "showOff" "demo"
+
+# Run tasks specified on the command line in debug mode
+if $DEBUG
+then
+	while [ -n "$1" -a -n "$2" -a -n "$3" ]
+	do
+		task "$1" "$2" "$3"
+		shift
+		shift
+		shift
+	done
+fi
