@@ -85,7 +85,7 @@ function demo () {
 
 task "showOff" "demo"
 
-# Run tasks specified on the command line in debug mode
+# When in debug mode, run tasks specified on the command line
 if $DEBUG
 then
 	while [ -n "$1" -a -n "$2" -a -n "$3" ]
