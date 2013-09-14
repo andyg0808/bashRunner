@@ -95,10 +95,21 @@ function task () {
 	fi
 }
 
+# TASK FUNCTIONS
 function demo () {
 	zenity --question --text="Press yes to complete this task. Press no to fail to complete this task."
 }
 
+# TASK LIST
+# Format:
+#   task "taskName" "taskFunction" ["option"]
+# Options:
+#   "repeat":
+#     Run this task every time bashRunner is run.
+#   "clear":
+#     Reset the runcount of this task so it will run again.
+#   (none):
+#     Run the task on first run of bashRunner only.
 task "showOff" "demo"
 
 # When in debug mode, run tasks specified on the command line
